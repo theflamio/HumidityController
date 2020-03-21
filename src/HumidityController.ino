@@ -2,7 +2,7 @@
 #include <LiquidCrystal_I2C_Spark.h>
 #include "application.h"
 #include <Wire.h>
-//#include "MQTT.h"
+#include "MQTT.h"
 
 
 
@@ -36,7 +36,9 @@ LiquidCrystal_I2C lcd(0x27,20,4); //set the LCD address to 0x27 for a 20 chars a
  * exp) iot.eclipse.org is Eclipse Open MQTT Broker: https://iot.eclipse.org/getting-started
  * MQTT client("iot.eclipse.org", 1883, callback);
  **/
-//MQTT mqttmclient("server_name", 1883, callback);
+void callback(char* topic, byte* payload, unsigned int length);
+
+MQTT client("server_name", 1883, callback);
 
 void setup() 
 {
@@ -52,15 +54,17 @@ void setup()
     pinMode(VENTILATORTWO,OUTPUT);
 
     //Setup Mqtt server
-    //MqttSetup();
+    MqttSetup();
 }
 
 
 void loop()
 { 
   // Mqtt loop
-  //if (mqttmclient.isConnected())
-  //      mqttmclient.loop();
+  if (client.isConnected())
+  {
+    client.loop();
+  }       
 
   //read temperatur and humidity
   delay(2000);
@@ -106,8 +110,7 @@ void PublishTempHumid(float temp, float humid)
 {
     Particle.publish("Temperature",String::format("%.2f",temp) , PUBLIC);
     Particle.publish("Humidity",String::format("%.2f",humid) , PUBLIC);
-    //mqttmclient.publish("outTopic/message","hello world");
-    //mqttmclient.publish("outTopic/message","hello world");
+    client.publish("outTopic/message","hello world");
 }
 
 float ReadTemp()
@@ -132,28 +135,33 @@ float GetSetPointFromUser()
 
 void VentilatorControl(float setPoint, float humid)
 {
-  if (humid >= setPoint) {
+  if (humid >= setPoint) 
+  {
     digitalWrite(VENTILATORONE,LOW);
     digitalWrite(VENTILATORTWO,LOW);
-  }else if(humid < (setPoint - 3))
+  }
+  else if(humid < (setPoint - 3))
   {
     digitalWrite(VENTILATORONE,HIGH);
     digitalWrite(VENTILATORTWO,HIGH); 
   }
-  else {
-
-  }
-/*
-  void MqttSetup()
+  else 
   {
-    // connect to the server
-    client.connect("sparkclient");
 
-    // publish/subscribe
-    if (client.isConnected()) {
-        client.publish("outTopic/message","hello world");
-        client.subscribe("inTopic/message");
-    }
   }
-  */
 }
+
+void MqttSetup()
+{
+  // connect to the server
+  client.connect("sparkclient");
+
+  // publish/subscribe
+  if (client.isConnected()) 
+  {
+      client.publish("outTopic/message","hello world");
+      client.subscribe("inTopic/message");
+  }
+}
+
+
